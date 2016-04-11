@@ -12,8 +12,8 @@ select *
 FROM  affiliations
 WHERE affiliations.ending IS NULL 
 AND affiliations.role = (SELECT staff_roles.id
-									FROM staff_roles 
-									WHERE staff_roles.name = 'Head of School');
+			FROM staff_roles 
+			WHERE staff_roles.name = 'Head of School');
 
 create or replace view Q2(name,school,starting)
 as
@@ -21,4 +21,12 @@ select people.name,orgunits.longname,Q2_1.starting
 from Q2_1,people,orgunits
 where people.id=Q2_1.staff
 and	  Q2_1.orgunit=orgunits.id
-and   Q2_1.isprimary='t'
+and   Q2_1.isprimary='t';
+
+create or replace view Q3(ratio,nsubjects)
+as
+select cast(uoc/eftsload as numeric(4,1)),count(*)
+from subjects
+where eftsload!=0 and eftsload is not null
+group by cast(uoc/eftsload as numeric(4,1));
+
