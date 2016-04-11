@@ -30,3 +30,21 @@ from subjects
 where eftsload!=0 and eftsload is not null
 group by cast(uoc/eftsload as numeric(4,1));
 
+create or replace view Q4_1(ncourses,id)
+as
+select count(*),course_staff.staff
+from staff_roles,course_staff
+where staff_roles.name = 'Course Convenor'
+and course_staff.role=staff_roles.id 
+group by course_staff.staff;
+
+create or replace view Q4(name,ncourses)
+as
+select people.name,Q4_1.ncourses
+from Q4_1,people
+where people.id=Q4_1.id
+and Q4_1.ncourses=
+	(select max(ncourses)
+	from Q4_1);
+
+
