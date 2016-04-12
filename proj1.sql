@@ -85,4 +85,23 @@ where people.id in (select student
                                 )
 		   );
 
+create or replace view Q5c(id)
+as
+select unswid
+from people
+where people.id in (select student
+		    from program_enrolments
+		    where program_enrolments.program in (select id
+	     			 from programs
+	     			where offeredby in (select id from orgunits
+					where  name='Computer Science and Engineering, School of'
+						)
+	     			)
+		    and semester=(select id 
+				    from semesters
+				    where term='S2'
+				    and year=2005
+
+                                )
+		   );
 
