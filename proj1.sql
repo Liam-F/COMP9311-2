@@ -53,12 +53,19 @@ select unswid
 from people
 where people.id in (select student
 		    from program_enrolments
-		    where program_enrolments.program 
-				in (select id from programs 	
+		    where semester=(select id 
+				    from semesters
+				    where term='S2'
+				    and year=2005
+                                   )
+		    and program_enrolments.program 
+	   	                    in (select id from programs 	
 				    where name='Computer Science'
 				    and code='3978'
-				   ) 
+				       ) 
 	       	   );
+
+
 
 
 
