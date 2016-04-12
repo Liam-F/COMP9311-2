@@ -105,3 +105,11 @@ where people.id in (select student
                                 )
 		   );
 
+create or replace function 
+Q6(integer)
+returns text
+as $$
+	select right(year||lower(term),4)
+	from semesters
+	where id = $1
+$$ language sql;
