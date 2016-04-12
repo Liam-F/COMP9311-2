@@ -49,7 +49,7 @@ and Q4_1.ncourses=
 
 create or replace view Q5a(id)
 as
-select name
+select unswid
 from people
 where people.id in (select student
 		    from program_enrolments
