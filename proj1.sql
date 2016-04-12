@@ -65,7 +65,24 @@ where people.id in (select student
 				       ) 
 	       	   );
 
+create or replace view Q5b(id)
+as
+select unswid
+from people
+where people.id in (select student
+		    from program_enrolments
+		    where id in (select partof
+	     			 from stream_enrolments
+	     			where stream in (select id from streams
+						where  code='SENGA1'
+						)
+	     			)
+		    and semester=(select id 
+				    from semesters
+				    where term='S2'
+				    and year=2005
 
-
+                                )
+		   );
 
 
