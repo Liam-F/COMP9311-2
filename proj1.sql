@@ -113,3 +113,16 @@ as $$
 	from semesters
 	where id = $1
 $$ language sql;
+
+Create or replace view Q7(sem,num)
+as
+select count(student),Q6(semester) 
+from program_enrolments
+where student in 
+( select id 
+from students
+where stype='intl'
+)
+group by Q6(semester)
+having Q6(semester) not like '__x1'
+order by Q6(semester)
