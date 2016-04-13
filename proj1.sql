@@ -114,7 +114,7 @@ as $$
 	where id = $1
 $$ language sql;
 
-Create or replace view Q7(sem,num)
+Create or replace view Q7(sem,num) /*没完成*/
 as
 select count(student),Q6(semester) 
 from program_enrolments
@@ -125,4 +125,41 @@ where stype='intl'
 )
 group by Q6(semester)
 having Q6(semester) not like '__x1'
-order by Q6(semester)
+order by Q6(semester);
+
+
+
+
+create or replace function Q8_1(integer)
+returns text
+as $$
+	select code||' '||name 
+	from subjects
+	where subjects.id = $1
+$$ language sql;
+
+
+
+create or replace view Q8_1
+as
+select * from programs LEFT JOIN course_staff on id=course
+where course is null;
+
+create or replace function 
+Q8_2(integer)
+returns integer
+as $$
+	select cast(code as integer)
+	from Q8_1
+	where id = $1
+$$ language sql;
+
+create or replace view Q8(subject,nOfferings) /*性能不太好*/
+as
+select Q8_1(Q8_2(program)),count(*)
+from program_enrolments
+where  Q8_1(Q8_2(program)) is not null
+group by program
+having count(*)
+>25;
+
