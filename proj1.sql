@@ -153,3 +153,32 @@ group by courses.subject
 having count(*)>25
 order by Q8_1(courses.subject);
 
+create or replace view Q9_1(course,subject)
+as
+select id,subject from courses where subject in 
+(select id from subjects
+where code like 'COMP34%');
+
+create or replace view Q9_2(student,subject)
+as
+select student,subject from course_enrolments left join Q9_1 using (course)
+where subject is not null;
+
+create or replace view Q9_3
+as
+select id
+from subjects
+where code like 'COMP34%';
+
+create or replace view Q9(unswid,name)
+as
+select unswid,name
+from people
+where id in(select  distinct student
+from Q9_2 a
+where not exists
+	(select * from Q9_3
+	where not exists
+	(select * from Q9_2 b
+	where b.student=a.student
+	and b.subject = Q9_3.id)))
