@@ -134,26 +134,22 @@ create or replace function Q8_1(integer)
 returns text
 as $$
 	select code||' '||name 
-	from subjects,courses
-	where courses.id = $1
-	and  subjects.id=courses.subject
+	from subjects
+	where id=$1
 $$ language sql;
 
 
-create or replace view Q8_1
+create or replace view Q8_1 /*select all subjects which never have staff */
 as
-select id,staff from course_staff  LEFT JOIN courses on id=course;
-
-create or replace view Q8_2 /*select all program.code which has staff*/
-as
-select course,staff from course_enrolments LEFT JOIN Q8_1 on Q8_1.id=course;
-
+select count(staff), subject from course_staff right JOIN courses on id=course
+group by subject
+having count(staff)=0;
 
 create or replace view Q8(subject,nOfferings) 
 as
-select Q8_1(course),count(*)
-from Q8_2
-where staff is null
-group by course
-having count(*)>25;
+select Q8_1(courses.subject),count(*) from courses,Q8_1
+where Q8_1.subject=courses.subject
+group by courses.subject
+having count(*)>25
+order by Q8_1(courses.subject);
 
