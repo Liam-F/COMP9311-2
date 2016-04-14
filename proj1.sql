@@ -135,32 +135,21 @@ returns text
 as $$
 	select code||' '||name 
 	from subjects
-	where subjects.id = $1
+	where id=$1
 $$ language sql;
 
 
-create or replace view Q8_1
+create or replace view Q8_1 /*select all subjects which never have staff */
 as
-select subject from course_staff  LEFT JOIN courses on id=course;
-
-create or replace view Q8_2 /*select all program.code which has staff*/
-as
-select programs.id from Q8_1 LEFT JOIN programs on Q8_1.subject=cast(code as integer);
-
-create or replace function 
-Q8_2(integer)		  /*let program.id be program.code*/
-returns integer
-as $$
-	select cast(code as integer)
-	from programs
-	where id = $1
-$$ language sql;
+select count(staff), subject from course_staff right JOIN courses on id=course
+group by subject
+having count(staff)=0;
 
 create or replace view Q8(subject,nOfferings) 
 as
-select Q8_1(Q8_2(program)),count(*)
-from program_enrolments  LEFT JOIN Q8_2 on Q8_2.id=program
-where Q8_2.id is null
-group by program
-having count(*)>25;
+select Q8_1(courses.subject),count(*) from courses,Q8_1
+where Q8_1.subject=courses.subject
+group by courses.subject
+having count(*)>25
+order by Q8_1(courses.subject);
 
