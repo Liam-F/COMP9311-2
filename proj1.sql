@@ -181,4 +181,38 @@ where not exists
 	where not exists
 	(select * from Q9_2 b
 	where b.student=a.student
-	and b.subject = Q9_3.id)))
+	and b.subject = Q9_3.id)));
+
+/*------------------------------------------------*/
+
+create or replace view Q10_semesters
+as
+select distinct (year) , term from semesters
+where year between 2002 and 2013
+and term like 'S%'
+order by year,term;
+
+create or replace view Q10_subjects
+as
+select id from subjects
+where code like 'COMP9%';
+
+create or replace view Q10_course_enrolments
+as
+select student,course,grade,subject,semester 
+from course_enrolments left join courses on  (course=courses.id),Q10_subjects
+where subject = Q10_subjects.id;
+
+create or replace view Q10_popilar_subjects
+as
+select * from Q10_subjects
+where not exists
+	(select * from Q10_semesters
+	 where not exists 
+			(select * from courses,semesters
+				where subject=Q10_subjects.id 
+				and semester=semesters.id 
+				and semesters.year = Q10_semesters.year 
+				and semesters.term=Q10_semesters.term 
+			)
+	);
