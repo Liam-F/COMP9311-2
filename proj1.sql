@@ -113,23 +113,34 @@ as $$
 	from semesters
 	where id = $1
 $$ language sql;
-
-Create or replace view Q7(sem,num) /*没完成*/
+/*-------------------Q7---------------*/
+Create or replace view Q7_intl_number(sem,intl_num) 
 as
-select count(student),Q6(semester) 
-from program_enrolments
-where student in 
-( select id 
-from students
-where stype='intl'
-)
-group by Q6(semester)
-having Q6(semester) not like '__x1'
-order by Q6(semester);
+select semester,count(student) 
+	from program_enrolments,students,semesters
+	where student = students.id 
+		and stype='intl'
+		and semester = semesters.id 
+		and semesters.year>=2005 
+		and term not like 'X%'			
+group by semester;
 
+Create or replace view Q7_all_number(sem,all_num) 
+as
+select semester,count(student) 
+	from program_enrolments,students,semesters
+	where student = students.id 
+		and semester = semesters.id 
+		and semesters.year>=2005 
+		and term not like 'X%'			
+group by semester;
 
-
-
+Create or replace view Q7(semester,percent)
+as
+select Q6(sem),cast (cast (intl_num as float)/cast(all_num as float) as numeric(4,2))
+from Q7_all_number left join Q7_intl_number using (sem)
+order by Q6(sem);
+/*-------------------Q8---------------*/
 create or replace function Q8_1(integer)
 returns text
 as $$
@@ -218,6 +229,7 @@ where not exists
 	);
 
 create or replace view Q10(unswid,name)
+as
 select unswid,given||' '||family from people
 where not exists
 	(select * from Q10_popilar_subjects
