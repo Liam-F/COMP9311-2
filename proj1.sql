@@ -1,10 +1,11 @@
- create or replace view Q1(unswid,name)
- AS
- SELECT DISTINCT people.unswid,
-  	         people.name
-   FROM people,
-    course_enrolments
-  WHERE course_enrolments.course > 55 AND course_enrolments.student = people.unswid;
+create or replace view Q1(unswid,name)
+AS
+SELECT  unswid, name
+FROM people
+where id in (select student
+	from course_enrolments
+	group by student
+	having count(*)>55);
 
 create or replace view Q2_1
 as
@@ -230,7 +231,7 @@ where not exists
 
 create or replace view Q10(unswid,name)
 as
-select unswid,given||' '||family from people
+select unswid,name from people
 where not exists
 	(select * from Q10_popilar_subjects
 		where not exists 
