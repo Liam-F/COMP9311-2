@@ -216,3 +216,16 @@ where not exists
 				and semesters.term=Q10_semesters.term 
 			)
 	);
+
+create or replace view Q10(unswid,name)
+select unswid,given||' '||family from people
+where not exists
+	(select * from Q10_popilar_subjects
+		where not exists 
+			(select * from Q10_course_enrolments
+			where Q10_course_enrolments.student=people.id
+			and Q10_course_enrolments.subject= Q10_popilar_subjects.id
+			and (Q10_course_enrolments.grade = 'HD' 
+						or Q10_course_enrolments.grade ='DN')
+			)
+	); 
