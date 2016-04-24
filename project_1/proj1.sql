@@ -1,10 +1,11 @@
- create or replace view Q1(unswid,name)
- AS
- SELECT DISTINCT people.unswid,
-  	         people.name
-   FROM people,
-    course_enrolments
-  WHERE course_enrolments.course > 55 AND course_enrolments.student = people.unswid;
+create or replace view Q1(unswid,name)
+AS
+SELECT  unswid, name
+FROM people
+where id in (select student
+	from course_enrolments
+	group by student
+	having count(*)>55);
 
 create or replace view Q2_1
 as
@@ -113,23 +114,34 @@ as $$
 	from semesters
 	where id = $1
 $$ language sql;
-
-Create or replace view Q7(sem,num) /*没完成*/
+/*-------------------Q7---------------*/
+Create or replace view Q7_intl_number(sem,intl_num) 
 as
-select count(student),Q6(semester) 
-from program_enrolments
-where student in 
-( select id 
-from students
-where stype='intl'
-)
-group by Q6(semester)
-having Q6(semester) not like '__x1'
-order by Q6(semester);
+select semester,count(student) 
+	from program_enrolments,students,semesters
+	where student = students.id 
+		and stype='intl'
+		and semester = semesters.id 
+		and semesters.year>=2005 
+		and term not like 'X%'			
+group by semester;
 
+Create or replace view Q7_all_number(sem,all_num) 
+as
+select semester,count(student) 
+	from program_enrolments,students,semesters
+	where student = students.id 
+		and semester = semesters.id 
+		and semesters.year>=2005 
+		and term not like 'X%'			
+group by semester;
 
-
-
+Create or replace view Q7(semester,percent)
+as
+select Q6(sem),cast (cast (intl_num as float)/cast(all_num as float) as numeric(4,2))
+from Q7_all_number left join Q7_intl_number using (sem)
+order by Q6(sem);
+/*-------------------Q8---------------*/
 create or replace function Q8_1(integer)
 returns text
 as $$
@@ -153,3 +165,80 @@ group by courses.subject
 having count(*)>25
 order by Q8_1(courses.subject);
 
+create or replace view Q9_1(course,subject)
+as
+select id,subject from courses where subject in 
+(select id from subjects
+where code like 'COMP34%');
+
+create or replace view Q9_2(student,subject)
+as
+select student,subject from course_enrolments left join Q9_1 using (course)
+where subject is not null;
+
+create or replace view Q9_3
+as
+select id
+from subjects
+where code like 'COMP34%';
+
+create or replace view Q9(unswid,name)
+as
+select unswid,name
+from people
+where id in(select  distinct student
+from Q9_2 a
+where not exists
+	(select * from Q9_3
+	where not exists
+	(select * from Q9_2 b
+	where b.student=a.student
+	and b.subject = Q9_3.id)));
+
+/*------------------------------------------------*/
+
+create or replace view Q10_semesters
+as
+select distinct (year) , term from semesters
+where year between 2002 and 2013
+and term like 'S%'
+order by year,term;
+
+create or replace view Q10_subjects
+as
+select id from subjects
+where code like 'COMP9%';
+
+create or replace view Q10_course_enrolments
+as
+select student,course,grade,subject,semester 
+from course_enrolments left join courses on  (course=courses.id),Q10_subjects
+where subject = Q10_subjects.id;
+
+create or replace view Q10_popilar_subjects
+as
+select * from Q10_subjects
+where not exists
+	(select * from Q10_semesters
+	 where not exists 
+			(select * from courses,semesters
+				where subject=Q10_subjects.id 
+				and semester=semesters.id 
+				and semesters.year = Q10_semesters.year 
+				and semesters.term=Q10_semesters.term 
+			)
+	);
+
+create or replace view Q10(unswid,name)
+as
+select unswid,name from people
+where not exists
+	(select * from Q10_popilar_subjects
+		where not exists 
+			(select * from Q10_course_enrolments
+			where Q10_course_enrolments.student=people.id
+			and Q10_course_enrolments.subject= Q10_popilar_subjects.id
+			and (Q10_course_enrolments.grade = 'HD' 
+						or Q10_course_enrolments.grade ='DN')
+			)
+	); 
