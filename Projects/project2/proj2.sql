@@ -1,6 +1,26 @@
 
 --create type TranscriptRecord as (code text, term text, course integer, prog text, name text, mark integer, grade text, uoc integer, rank integer, totalEnrols integer);
-
+----------------------------
+create or replace function qqq(integer)
+returns setof aaa
+as
+$$
+declare
+r aaa%rowtype;
+begin
+for r in
+select Q1_student_rank(Q1_id(2237675),course), Q1_course_code(subject) 
+ from Q1_all, program_enrolments
+where Q1_all.student = Q1_id(2237675)
+and Q1_all.semester = program_enrolments.semester
+and Q1_all.student = program_enrolments.student loop 
+return next r;
+end loop;
+return;
+end
+$$
+language plpgsql;
+------------------------
 create or replace function Q1_course_code(integer)
 returns char(8)
 as $$
@@ -43,7 +63,7 @@ subject,
 semester 
 from (courses left join course_enrolments on course = courses.id)
 -------------
-select Q1_course_code(subject),course,Q1_all.mark,grade,Q1_term(Q1_all.semester), program
+select Q1_student_rank(Q1_id(2237675),course ) ,Q1_course_code(subject),course,Q1_all.mark,grade,Q1_term(Q1_all.semester), program
  from Q1_all, program_enrolments
 where Q1_all.student = Q1_id(2237675)
 and Q1_all.semester = program_enrolments.semester
@@ -56,13 +76,43 @@ select student,rank() over (order by mark DESC)from course_enrolments
 where course = ke; 
 $$ language sql
 ----------------
+create or replace function Q1_program_code(int)
+returns char(4)
+as $$
+select code from programs
+where id = $1;
+$$ language sql
+----------------
+create or replace function Q1_student_rank(stu integer, ke integer)
+returns bigint
+as $$
+select rank from Q1_rank(ke)
+where student = stu; 
+$$ language sql
+-----------------------------
+create type hi as (rank bigint, code char(8), course integer, mark integer, grade char(2),term text,prog char(4))
+---------------------------------
 create type TranscriptRecord as (code char(8), term char(4), course integer, prog char(4), name text, mark integer, grade char(2), uoc integer, rank integer, totalEnrols integer);
 
 create or replace function Q1(integer)
 	returns setof TranscriptRecord
 as $$
-	select * from Q1_unnamed
-	where  id = $1
+begin
+select 
+
+Q1_student_rank(Q1_id(2237675),course ) ,
+Q1_course_code(subject),
+course,
+Q1_all.mark,
+grade,
+Q1_term(Q1_all.semester),
+Q1_program_code(program)
+ 
+ from Q1_all, program_enrolments
+where Q1_all.student = Q1_id(2237675)
+and Q1_all.semester = program_enrolments.semester
+and Q1_all.student = program_enrolments.student;
+end;
 $$ language plpgsql;
 
 
