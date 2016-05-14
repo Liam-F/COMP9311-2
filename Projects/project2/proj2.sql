@@ -145,21 +145,18 @@ language plpgsql;
 -- Q2: ...
 
 ------------
-create or replace function Q2_column(text)
-returns setof text
-as $$
- select column_name from information_schema.columns where
-table_name=$1;
-$$
-language sql
----------
-select * from Q2_test('subjects','COMP\d\d\d')
--------
-SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
-  WHERE table_name = 'subjects' AND COLUMN_NAME = 'syllabus';
+
 ----------------------------
-create or replace function Q2_test("table" text, pattern text) 
-returns setof MatchingRecord
+
+-------------------------
+
+--------------------------
+
+--------------------------------
+create type MatchingRecord as ("table" text, "column" text, nexamples integer);
+
+create or replace function Q2("table" text, pattern text) 
+	returns setof MatchingRecord
 as $$
 declare 
 	att text;
@@ -183,35 +180,6 @@ begin
 			return;
 end;
 $$ language plpgsql
--------------------------
-create or replace function Q2_test("table" text, pattern text) 
-returns setof MatchingRecord
- q2_column('subjects')
---------------------------
-create or replace function Q2_test("table" text, pattern text) 
-returns setof MatchingRecord
-as $$
-declare z text;
-datas record;
-a int;
-begin
- for z in q2_column($1) loop 
- select count(z) into a from $1 where z like $2;
- if a != 0
- then
-return next r ;
-end if;
-end loop;
-end;
-$$ language plpgsql
---------------------------------
-create type MatchingRecord as ("table" text, "column" text, nexamples integer);
-
-create or replace function Q2("table" text, pattern text) 
-	returns setof MatchingRecord
-as $$
-... one SQL statement, possibly using other functions defined by you ...
-$$ language plpgsql;
  
 -- Q3: ...
 
