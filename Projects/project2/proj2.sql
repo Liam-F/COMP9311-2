@@ -182,14 +182,152 @@ end;
 $$ language plpgsql
  
 -- Q3: ...
+-------------------
+create or replace function Q3_staff_role(int)
+returns text
+as $$
+	select name from staff_roles where id = $1
+     $$ language sql
+---------------------
+create or replace function Q3_org_name(int)
+returns char(64)
+as $$
+	select name from orgunits where id = $1
+     $$ language sql
+-----------------------
+create or replace function Q3_person(integer) 
+	returns setof EmploymentRecord 
+as $$
+ declare person int;
+	       n int;
+	       emp record;
+	       emp2 record;
+	       t int :=0;
+	       result text := '';
+	       cur_end text := ' ';
+	     
 
+ begin 
+	for person in select staff from affiliations where orgunits = $1 group by (staff)
+	loop 
+	        execute 'select count(*) from affiliations '||' where staff = '||person into n ; 	     
+	        if n > 1 then		
+			for emp in select * from affiliations where staff = person order by starting 
+				loop
+				if (cur_end != ' ') then
+					if cur_end > emp.end then
+						
+				
+				
+				
+				end loop;
+			if t > 1 then
+				for a in select * from affiliations where staff = person order by starting
+				loop
+					if a.starting is null then
+						result = result ||Q3_staff_role(a.staff)||', '||Q3_org_name(a.orgunit)||'('||a.starting||'..)'||E'\n'
+					else
+						result = result ||Q3_staff_role(a.staff)||', '||Q3_org_name(a.orgunit)||'('||a.starting||'..'||a.ending||')'||E'\n'
+				end loop;
+			end if;
+			select Q1_id(staff), staff, result into EmploymentRecord
+			return next EmploymentRecord;
+		end if;
+	end loop;
+end					
+$$ language plpgsql;
+--------------test--------------------------
+create or replace function Q3_show(int)
+returns setof EmploymentRecord
+as $$
+declare 
+a record;
+result text := '';
+employ EmploymentRecord;
+begin
+	for a in select * from affiliations where  staff = $1  order by starting
+	loop
+		if a.ending is null then
+			result := '1'||result||'Q3_staff_role('||a.staff||')'||a.starting||E'\n';
+			
+		else
+			result := '2'||result||a.starting||E'\n';
+		end if;
+		raise notice 'Value: %', result;
+	end loop;
+	result := result||'333';
+	select Q3_unswid($1), Q3_name($1), result into employ;
+	return next employ;
+end
+$$ language plpgsql
+----------------------------------
+create or replace function Q3_show(int)
+returns setof EmploymentRecord
+as $$
+declare 
+a record;
+result text := '';
+employ EmploymentRecord;
+begin
+	for a in select * from affiliations where  staff = $1  order by starting
+	loop
+		if a.ending is null then
+			result := result||Q3_staff_role(a.role)||', '||Q3_org_name(a.orgunit)||'('||a.starting||'..)'||E'\n';	
+		else
+			result := result||Q3_staff_role(a.role)||', '||Q3_org_name(a.orgunit)||'('||a.starting||'..'||a.ending||')'||E'\n';
+		end if;
+	end loop;
+	
+	select Q3_unswid($1), Q3_name($1), result into employ;
+	return next employ;
+end
+$$ language plpgsql
+      
+	
 
+select * from q3_show(50409255)      
+----------------------------------
+create or replace function Q3_name(int)
+returns char(128)
+as $$
+	select name from people where id = $1
+$$ language sql;
+------------------------------------
+create or replace function Q3_unswid(int)
+returns int
+as $$
+select unswid from people where id = $1
+$$ language sql;
+-------------------------
 
 
 create type EmploymentRecord as (unswid integer, name text, roles text);
 create or replace function Q3(integer) 
 	returns setof EmploymentRecord 
 as $$
-... one SQL statement, possibly using other functions defined by you ...
+ declare person int;
+	       n int;
+	       emp record;
+	       emp2 record;
+	       t int :=0;
+
+ begin 
+	for person in select staff from affiliations group by (staff)
+	loop 
+	        execute 'select count(*) from affiliations '||' where staff = '||person into n ; 	     
+	        if n > 1 then
+			for emp in select * from affiliations where staff = person
+			loop
+				for emp2 in select * from affiliations where staff = person
+				loop
+					if (emp.starting, emp.ending) OVERLAPS (emp2.starting, empo2.ending) then
+						t := t+1;
+				end loop
+			end loop
+			if t > 1 then
+				return next 
+					
+				
+	
 $$ language plpgsql;
 
