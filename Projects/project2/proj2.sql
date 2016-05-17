@@ -300,6 +300,50 @@ select unswid from people where id = $1
 $$ language sql;
 -------------------------
 
+---------------------
+create or replace function Q3_org(int)
+returns setof int
+as $$
+	with recursive included_org(member) as(
+		select member from orgunit_groups where owner = $1
+	union 
+		select p.member from included_org pr, orgunit_groups p where p.owner = pr.member)
+	select member from included_org union select $1
+$$ language sql;
+-----------------------------
+create or replace function Q3(integer) 
+	returns setof EmploymentRecord 
+as $$
+ declare person int;
+	       n int;
+	       emp record ;
+	       next_date date := '1000-01-01';
+	       t int := 0;
+	       
+
+ begin 
+	for person in select staff from affiliations where orgunit in (select * from Q3_org($1)) group by (staff)
+	loop 
+		t:=0;
+		for emp in select * from affiliations where staff = person order by starting
+		loop
+			if next_date != '1000-01-01' then
+				if next_date <= emp.starting then
+					t := t+1;
+				end if;
+			end if;
+			if next_date < emp.ending then
+				next_date := emp.ending;
+			end if;
+		end loop;
+		if t >1 then
+		return next Q3_show(person);
+		end if;
+	end loop;
+end;
+$$ language plpgsql;
+-----------------------------
+
 
 create type EmploymentRecord as (unswid integer, name text, roles text);
 create or replace function Q3(integer) 
@@ -312,7 +356,7 @@ as $$
 	       t int :=0;
 
  begin 
-	for person in select staff from affiliations group by (staff)
+	for person in select staff from affiliations where orgunit in (select * from Q3_org(661)) group by (staff)
 	loop 
 	        execute 'select count(*) from affiliations '||' where staff = '||person into n ; 	     
 	        if n > 1 then
